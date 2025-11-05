@@ -8,15 +8,14 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
-            steps {
-                script {
-                    sh 'docker build -t smartfarm/data-ingestor:latest ./services/data-ingestor'
-                    sh 'docker build -t smartfarm/analytics-processor:latest ./services/analytics-processor'
-                    sh 'docker build -t smartfarm/dashboard:latest ./services/dashboard'
-                }
-            }
+        stage('Build Docker Image') {
+    steps {
+        script {
+            sh 'docker build -t smartfarm/data-ingestor:latest ./SmartFarm/services/data-ingestor'
         }
+    }
+}
+
 
         stage('Run Containers') {
             steps {
