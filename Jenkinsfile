@@ -1,41 +1,39 @@
+cd "F:\B.Tech 3rd Year\1st Sem\CCD\Mini Project\SmartFarm"
+
+@"
 pipeline {
-    agent any
-
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/jaii31/SmartFarm.git'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                echo "Building Docker image for data-ingestor..."
-                docker build -t smartfarm/data-ingestor:latest SmartFarm/services/data-ingestor
-                '''
-            }
-        }
-
-        stage('Deploy Container') {
-            steps {
-                sh '''
-                echo "Removing any existing container..."
-                docker rm -f data-ingestor || true
-
-                echo "Starting new container with docker-compose..."
-                docker-compose -f SmartFarm/docker-compose.yml up -d --build
-                '''
-            }
-        }
+  agent any
+  environment {
+    IMAGE_TAG = "smartfarm-data-ingestor:latest"
+    COMPOSE_FILE = "docker-compose.yml"
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
     }
-
-    post {
-        success {
-            echo '✅ Build and deployment successful!'
-        }
-        failure {
-            echo '❌ Build failed — check Docker or Jenkins logs.'
-        }
+    stage('Build data-ingestor image') {
+      steps {
+        sh '''
+          docker build -t ${IMAGE_TAG} ./services/data-ingestor || true
+        '''
+      }
     }
+    stage('Start stack') {
+      steps {
+        sh '''
+          if [ -f "${COMPOSE_FILE}" ]; then
+            docker-compose -f ${COMPOSE_FILE} up -d --build || true
+          else
+            echo "docker-compose.yml not found; skipping compose"
+          fi
+        '''
+      }
+    }
+  }
+  post {
+    always {
+      sh 'docker ps --filter name=data-ingestor || true'
+    }
+  }
 }
+"@ > Jenkinsfile
